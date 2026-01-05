@@ -23,6 +23,7 @@ import swervelib.imu.ADIS16470Swerve;
 import swervelib.imu.ADXRS450Swerve;
 import swervelib.imu.AnalogGyroSwerve;
 //import swervelib.imu.CanandgyroSwerve;
+import swervelib.imu.NavX3Swerve;
 import swervelib.imu.NavXSwerve;
 import swervelib.imu.Pigeon2Swerve;
 import swervelib.imu.PigeonSwerve;
@@ -158,6 +159,8 @@ public class DeviceJson
       case "navx":
       case "navx_spi":
         return new NavXSwerve(NavXComType.kMXP_SPI);
+      case "navx3":
+        return new NavX3Swerve(id);
       case "navx_i2c":
         DriverStation.reportWarning(
             "WARNING: There exists an I2C lockup issue on the roboRIO that could occur, more information here: " +
