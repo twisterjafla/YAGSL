@@ -1,7 +1,5 @@
 package swervelib.simulation.ironmaple.simulation.drivesims;
 
-import static edu.wpi.first.units.Units.*;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -9,14 +7,16 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.*;
-import java.util.Arrays;
-import java.util.function.Supplier;
 import org.dyn4j.geometry.Vector2;
 import swervelib.simulation.ironmaple.simulation.SimulatedArena;
 import swervelib.simulation.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import swervelib.simulation.ironmaple.utils.mathutils.GeometryConvertor;
 import swervelib.simulation.ironmaple.utils.mathutils.MapleCommonMath;
-import swervelib.simulation.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
+
+import java.util.Arrays;
+import java.util.function.Supplier;
+
+import static edu.wpi.first.units.Units.*;
 
 /**
  *
@@ -80,9 +80,9 @@ public class SwerveDriveSimulation extends AbstractDriveTrainSimulation {
      * <p>This constructor initializes a swerve drive simulation with the given robot mass, bumper dimensions, module
      * simulations, module translations, gyro simulation, and initial pose on the field.
      *
-     * @param config a {@link DriveTrainSimulationConfig} instance containing the configurations of * this drivetrain
+     * @param config             a {@link DriveTrainSimulationConfig} instance containing the configurations of * this drivetrain
      * @param initialPoseOnField the initial pose of the drivetrain in the simulation world, represented as a
-     *     {@link Pose2d}
+     *                           {@link Pose2d}
      */
     public SwerveDriveSimulation(DriveTrainSimulationConfig config, Pose2d initialPoseOnField) {
         super(config, initialPoseOnField);
@@ -152,8 +152,8 @@ public class SwerveDriveSimulation extends AbstractDriveTrainSimulation {
         final ChassisSpeeds differenceBetweenFloorSpeedAndModuleSpeedsRobotRelative =
                 moduleSpeeds.minus(getDriveTrainSimulatedChassisSpeedsRobotRelative());
         final Translation2d floorAndModuleSpeedsDiffFieldRelative = new Translation2d(
-                        differenceBetweenFloorSpeedAndModuleSpeedsRobotRelative.vxMetersPerSecond,
-                        differenceBetweenFloorSpeedAndModuleSpeedsRobotRelative.vyMetersPerSecond)
+                differenceBetweenFloorSpeedAndModuleSpeedsRobotRelative.vxMetersPerSecond,
+                differenceBetweenFloorSpeedAndModuleSpeedsRobotRelative.vyMetersPerSecond)
                 .rotateBy(getSimulatedDriveTrainPose().getRotation());
         final double FRICTION_FORCE_GAIN = 3.0,
                 totalGrippingForce =
@@ -207,8 +207,8 @@ public class SwerveDriveSimulation extends AbstractDriveTrainSimulation {
     private void simulateChassisFrictionTorque() {
         final double
                 desiredRotationalMotionPercent =
-                        Math.abs(getDesiredSpeed().omegaRadiansPerSecond
-                                / maxAngularVelocity().in(RadiansPerSecond)),
+                Math.abs(getDesiredSpeed().omegaRadiansPerSecond
+                        / maxAngularVelocity().in(RadiansPerSecond)),
                 actualRotationalMotionPercent =
                         Math.abs(getAngularVelocity() / maxAngularVelocity().in(RadiansPerSecond)),
                 differenceBetweenFloorSpeedAndModuleSpeed =
@@ -249,12 +249,12 @@ public class SwerveDriveSimulation extends AbstractDriveTrainSimulation {
      * <p>The total friction force should not exceed the tire's grip limit.
      */
     private void simulateModulePropellingForces() {
-        for (int i = 0; i < moduleSimulations.length; i++) {
+        final int arrayLength = moduleSimulations.length; // Call it once
+        final Rotation2d driveRotation = getSimulatedDriveTrainPose().getRotation(); // Call it once per 4 modules.
+        for (int i = 0; i < arrayLength; i++) {
             final Vector2 moduleWorldPosition = getWorldPoint(GeometryConvertor.toDyn4jVector2(moduleTranslations[i]));
             final Vector2 moduleForce = moduleSimulations[i].updateSimulationSubTickGetModuleForce(
-                    super.getLinearVelocity(moduleWorldPosition),
-                    getSimulatedDriveTrainPose().getRotation(),
-                    gravityForceOnEachModule);
+                    super.getLinearVelocity(moduleWorldPosition), driveRotation, gravityForceOnEachModule);
             super.applyForce(moduleForce, moduleWorldPosition);
         }
     }
@@ -298,7 +298,7 @@ public class SwerveDriveSimulation extends AbstractDriveTrainSimulation {
      * <h2>Obtains the maximum achievable linear velocity of the chassis.</h2>
      *
      * @return the maximum linear velocity
-     * @see SwerveModuleSimulationConfig#maximumGroundSpeed()
+     * @see swervelib.simulation.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig#maximumGroundSpeed()
      */
     public LinearVelocity maxLinearVelocity() {
         return moduleSimulations[0].config.maximumGroundSpeed();
@@ -310,7 +310,7 @@ public class SwerveDriveSimulation extends AbstractDriveTrainSimulation {
      * <h2>Obtains the maximum achievable linear acceleration of the chassis.</h2>
      *
      * @return the maximum linear acceleration
-     * @see SwerveModuleSimulationConfig#maxAcceleration(Mass, int, Current)
+     * @see swervelib.simulation.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig#maxAcceleration(Mass, int, Current)
      */
     public LinearAcceleration maxLinearAcceleration(Current statorCurrentLimit) {
         return moduleSimulations[0].config.maxAcceleration(
@@ -349,10 +349,10 @@ public class SwerveDriveSimulation extends AbstractDriveTrainSimulation {
      */
     public AngularAcceleration maxAngularAcceleration(Current statorCurrentLimit) {
         return RadiansPerSecondPerSecond.of(moduleSimulations[0]
-                        .config
-                        .getTheoreticalPropellingForcePerModule(
-                                config.robotMass, moduleSimulations.length, statorCurrentLimit)
-                        .in(Newtons)
+                .config
+                .getTheoreticalPropellingForcePerModule(
+                        config.robotMass, moduleSimulations.length, statorCurrentLimit)
+                .in(Newtons)
                 * moduleTranslations[0].getNorm()
                 * moduleSimulations.length
                 / super.getMass().getInertia());

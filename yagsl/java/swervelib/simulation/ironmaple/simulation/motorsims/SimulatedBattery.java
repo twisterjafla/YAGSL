@@ -1,8 +1,5 @@
 package swervelib.simulation.ironmaple.simulation.motorsims;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Volts;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.units.measure.Current;
@@ -11,9 +8,13 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Volts;
 
 /**
  *
@@ -34,6 +35,17 @@ public class SimulatedBattery {
 
     // The current battery voltage in volts.
     private static double batteryVoltageVolts = BATTERY_NOMINAL_VOLTAGE;
+
+    private static boolean disableBatterySim = false;
+
+    /**
+     * Disables the battery simulation. This is a lazy quick fix to help the opponent simulation.
+     */
+    public static void disableBatterySim() {
+        disableBatterySim = true;
+        electricalAppliances.clear();
+        batteryVoltageVolts = BATTERY_NOMINAL_VOLTAGE;
+    }
 
     /**
      *
@@ -74,8 +86,6 @@ public class SimulatedBattery {
         double totalCurrentAmps = getTotalCurrentDrawn().in(Amps);
         totalCurrentAmps = currentFilter.calculate(totalCurrentAmps);
 
-        batteryVoltageVolts = BatterySim.calculateLoadedBatteryVoltage(BATTERY_NOMINAL_VOLTAGE, 0.02, totalCurrentAmps);
-
         if (Double.isNaN(batteryVoltageVolts)) {
             batteryVoltageVolts = 12.0;
             DriverStation.reportError(
@@ -88,8 +98,13 @@ public class SimulatedBattery {
             DriverStation.reportError("[MapleSim] BrownOut Detected, protecting battery voltage...", false);
         }
 
-        RoboRioSim.setVInVoltage(batteryVoltageVolts);
+        /// Quick fix to lock battery simulation to nominal voltage.
+        if (!disableBatterySim) {
+            batteryVoltageVolts =
+                    BatterySim.calculateLoadedBatteryVoltage(BATTERY_NOMINAL_VOLTAGE, 0.02, totalCurrentAmps);
+        }
 
+        RoboRioSim.setVInVoltage(batteryVoltageVolts);
         SmartDashboard.putNumber("BatterySim/TotalCurrent (Amps)", totalCurrentAmps);
         SmartDashboard.putNumber("BatterySim/BatteryVoltage (Volts)", batteryVoltageVolts);
     }

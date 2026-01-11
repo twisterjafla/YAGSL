@@ -1,19 +1,18 @@
 package swervelib.simulation.ironmaple.simulation;
 
-import static edu.wpi.first.units.Units.Degrees;
-
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import org.dyn4j.geometry.Rectangle;
 import org.dyn4j.geometry.Vector2;
 import swervelib.simulation.ironmaple.simulation.gamepieces.GamePiece;
+
+import java.util.List;
+
+import static edu.wpi.first.units.Units.Degrees;
 
 /**
  *
@@ -34,7 +33,7 @@ public abstract class Goal implements SimulatedArena.Simulatable {
     public final boolean isBlue;
     protected int gamePieceCount = 0;
     protected Rotation3d pieceAngle = null;
-    protected Angle pieceAngleTolerance = Angle.ofBaseUnits(15, Units.Degrees);
+    protected Angle pieceAngleTolerance = Angle.ofBaseUnits(15, Degrees);
 
     /**
      *
@@ -53,14 +52,14 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      *
      * <h2>Creates a goal object </h2>
      *
-     * @param arena The host arena of this goal
-     * @param xDimension The x dimension of the default box collider.
-     * @param yDimension The y dimension of the default box collider.
-     * @param height The height or z dimension of the default box collider.
+     * @param arena         The host arena of this goal
+     * @param xDimension    The x dimension of the default box collider.
+     * @param yDimension    The y dimension of the default box collider.
+     * @param height        The height or z dimension of the default box collider.
      * @param gamePieceType the string game piece type to be handled by this goal.
-     * @param position The position of this goal.
-     * @param isBlue Wether this is a blue goal or a red one.
-     * @param max How many pieces can be scored in this goal.
+     * @param position      The position of this goal.
+     * @param isBlue        Wether this is a blue goal or a red one.
+     * @param max           How many pieces can be scored in this goal.
      */
     public Goal(
             SimulatedArena arena,
@@ -89,13 +88,13 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      *
      * <h2>Creates a goal object with no scoring max.</h2>
      *
-     * @param arena The host arena of this goal.
-     * @param xDimension The x dimension of the default box collider.
-     * @param yDimension The y dimension of the default box collider.
-     * @param height The height or z dimension of the default box collider.
+     * @param arena         The host arena of this goal.
+     * @param xDimension    The x dimension of the default box collider.
+     * @param yDimension    The y dimension of the default box collider.
+     * @param height        The height or z dimension of the default box collider.
      * @param gamePieceType the string game piece type to be handled by this goal.
-     * @param position The position of this goal.
-     * @param isBlue Wether this is a blue goal or a red one.
+     * @param position      The position of this goal.
+     * @param isBlue        Wether this is a blue goal or a red one.
      */
     public Goal(
             SimulatedArena arena,
@@ -115,21 +114,19 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      */
     @Override
     public void simulationSubTick(int subTickNum) {
-
-        Set<GamePiece> gamePieces = new HashSet<GamePiece>(arena.getGamePiecesByType(gamePieceType));
-        Set<GamePiece> toRemove = new HashSet<>();
-
-        for (GamePiece gamePiece : gamePieces) {
-            if (gamePieceCount != max && !toRemove.contains(gamePiece) && this.checkValidity(gamePiece)) {
-                gamePieceCount++;
-                this.addPoints();
-                toRemove.add(gamePiece);
-            }
-        }
-
-        for (GamePiece gamePiece : toRemove) {
-            this.arena.removePiece(gamePiece);
-        }
+        if (gamePieceCount >= max) return; // Early exit if already at max
+        /// Use list filtering for more efficient bulk checking.
+        // Get all pieces of our type as a list.
+        arena.getGamePiecesByType(gamePieceType).stream()
+                .filter(gamePiece -> !checkGrounded(gamePiece))
+                .filter(this::checkValidity)
+                .limit(max - gamePieceCount) // Only score what we can
+                .forEach(
+                        gamePiece -> { // If a piece passes, score it.
+                            gamePieceCount++;
+                            this.addPoints();
+                            arena.removePiece(gamePiece);
+                        });
     }
 
     /**
@@ -137,7 +134,7 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      *
      * <h2>Sets the angle to be used when checking game piece rotation.
      *
-     * @param angle The angle that pieces should have when interacting with this goal
+     * @param angle          The angle that pieces should have when interacting with this goal
      * @param angleTolerance The tolerance to be used in checking said angle.
      */
     public void setNeededAngle(Rotation3d angle, Angle angleTolerance) {
@@ -162,8 +159,6 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      *
      * <p>{@link org.dyn4j.geometry.AbstractShape#contains(Vector2 point)}
      *
-     * <p>{@link Goal#checkHeight(GamePiece)}
-     *
      * <p>{@link Goal#checkRotation(GamePiece)}
      *
      * <p>{@link Goal#checkVel(GamePiece)}
@@ -175,14 +170,26 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      * @return Wether or not the game piece is within this goal.
      */
     protected boolean checkValidity(GamePiece gamePiece) {
-        return checkCollision(gamePiece) && checkRotation(gamePiece) && checkVel(gamePiece);
+        return checkRotation(gamePiece) & checkVel(gamePiece) & checkCollision(gamePiece);
+    }
+
+    /**
+     *
+     *
+     * <h2>Checks whether the submitted game piece is grounded </h2>
+     *
+     * @param gamePiece The game piece to have its groundedness checked.
+     * @return Whether the piece is grounded.
+     */
+    protected boolean checkGrounded(GamePiece gamePiece) {
+        return gamePiece.isGrounded();
     }
 
     /**
      *
      *
      * <h2>Checks wether or not the submitted game piece has a rotation able to be scored in this goal </h2>
-     *
+     * <p>
      * By default the rotation needed and tolerance may be set using the {@link Goal#setNeededAngle(Rotation3d, Angle)}
      * function. However rotation checks may be handled differently by some children making this not apply. Additionally
      * be aware that this function only supports pitch and yaw, not role. If support for roll is needed a custom
@@ -193,7 +200,6 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      */
     protected boolean checkRotation(GamePiece gamePiece) {
         if (pieceAngle == null) {
-            System.out.println("test");
             return true;
         }
 
@@ -201,16 +207,14 @@ public abstract class Goal implements SimulatedArena.Simulatable {
         Rotation3d flippedDiff =
                 flipRotation(gamePiece.getPose3d().getRotation()).minus(pieceAngle);
 
-
-
         return new Rotation3d(Degrees.of(0), normalDiff.getMeasureZ(), normalDiff.getMeasureZ())
-                                .getMeasureAngle()
-                                .in(Units.Degrees)
-                        < pieceAngleTolerance.in(Units.Degrees)
+                .getMeasureAngle()
+                .in(Degrees)
+                < pieceAngleTolerance.in(Degrees)
                 || new Rotation3d(Degrees.of(0), flippedDiff.getMeasureZ(), flippedDiff.getMeasureZ())
-                                .getMeasureAngle()
-                                .in(Units.Degrees)
-                        < pieceAngleTolerance.in(Units.Degrees);
+                .getMeasureAngle()
+                .in(Degrees)
+                < pieceAngleTolerance.in(Degrees);
     }
 
     /**
@@ -222,17 +226,19 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      * @return Wether or not the game piece is within the goal.
      */
     protected boolean checkCollision(GamePiece gamePiece) {
-        return xyBox.contains(new Vector2(
-                        gamePiece.getPose3d().getX(), gamePiece.getPose3d().getY()))
-                && gamePiece.getPose3d().getZ() >= elevation.in(Units.Meters)
-                && gamePiece.getPose3d().getZ() <= elevation.in(Units.Meters) + height.in(Units.Meters);
+        // Call our values just once.
+        var pose = gamePiece.getPose3d();
+        double minZ = elevation.in(Units.Meters);
+        double maxZ = minZ + height.in(Units.Meters);
+
+        return xyBox.contains(new Vector2(pose.getX(), pose.getY())) && pose.getZ() >= minZ && pose.getZ() <= maxZ;
     }
 
     /**
      *
      *
      * <h2>Function to check wether the velocity of potential game pieces is acceptable.</h2>
-     *
+     * <p>
      * The default implementation of this function always returns true so any velocity checks will need to be
      * implemented by children classes.
      *
@@ -240,7 +246,6 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      * @return Wether or not the pieces velocity is consistent with velocities that are able to be scored in this goal.
      */
     protected boolean checkVel(GamePiece gamePiece) {
-
         return true;
     }
 
@@ -268,7 +273,7 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      *
      *
      * <h2>Adds points when a piece has been successfully scored in this goal</h2>
-     *
+     * <p>
      * Since this function is the only trigger called when a piece is scored it may handle other small things outside of
      * adding points.
      */
@@ -280,7 +285,7 @@ public abstract class Goal implements SimulatedArena.Simulatable {
      * <h2>Displays game pieces to advantage scope if applicable.</h2>
      *
      * @param drawList a list of {@link Pose3d} objects used to visualize the positions of the game pieces on
-     *     AdvantageScope
+     *                 AdvantageScope
      */
     public abstract void draw(List<Pose3d> drawList);
 
