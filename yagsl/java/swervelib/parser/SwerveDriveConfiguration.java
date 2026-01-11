@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 import swervelib.simulation.ironmaple.simulation.drivesims.COTS;
 import swervelib.simulation.ironmaple.simulation.drivesims.GyroSimulation;
 import swervelib.SwerveModule;
-import swervelib.imu.NavXSwerve;
+//import swervelib.imu.NavXSwerve;
 import swervelib.imu.Pigeon2Swerve;
 import swervelib.imu.SwerveIMU;
 import swervelib.math.SwerveMath;
@@ -155,10 +155,11 @@ public class SwerveDriveConfiguration
     if (imu instanceof Pigeon2Swerve)
     {
       return COTS.ofPigeon2();
-    } else if (imu instanceof NavXSwerve)
-    {
-      return COTS.ofNav2X();
     }
+//    else if (imu instanceof NavXSwerve)
+//    {
+//      return COTS.ofNav2X();
+//    }
     return COTS.ofGenericGyro();
   }
 
