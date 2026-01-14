@@ -5,13 +5,13 @@ import static swervelib.telemetry.SwerveDriveTelemetry.i2cLockupWarning;
 import static swervelib.telemetry.SwerveDriveTelemetry.serialCommsIssueWarning;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-//import com.studica.frc.AHRS.NavXComType;
+import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DriverStation;
 import swervelib.encoders.AnalogAbsoluteEncoderSwerve;
 import swervelib.encoders.CANCoderSwerve;
-//import swervelib.encoders.CanAndMagSwerve;
+import swervelib.encoders.CanAndMagSwerve;
 import swervelib.encoders.DIODutyCycleEncoderSwerve;
 import swervelib.encoders.SparkFlexEncoderSwerve;
 import swervelib.encoders.SparkMaxAnalogEncoderSwerve;
@@ -22,9 +22,9 @@ import swervelib.imu.ADIS16448Swerve;
 import swervelib.imu.ADIS16470Swerve;
 import swervelib.imu.ADXRS450Swerve;
 import swervelib.imu.AnalogGyroSwerve;
-//import swervelib.imu.CanandgyroSwerve;
-//import swervelib.imu.NavX3Swerve;
-//import swervelib.imu.NavXSwerve;
+import swervelib.imu.CanandgyroSwerve;
+import swervelib.imu.NavX3Swerve;
+import swervelib.imu.NavXSwerve;
 import swervelib.imu.Pigeon2Swerve;
 import swervelib.imu.PigeonSwerve;
 import swervelib.imu.PigeonViaTalonSRXSwerve;
@@ -37,7 +37,7 @@ import swervelib.motors.SwerveMotor;
 import swervelib.motors.TalonFXSSwerve;
 import swervelib.motors.TalonFXSwerve;
 import swervelib.motors.TalonSRXSwerve;
-//import swervelib.motors.ThriftyNovaSwerve;
+import swervelib.motors.ThriftyNovaSwerve;
 import swervelib.parser.deserializer.ReflectionsManager;
 import swervelib.parser.deserializer.ReflectionsManager.VENDOR;
 
@@ -92,8 +92,8 @@ public class DeviceJson
       case "sparkflex_canandcoder":
         return new SparkFlexEncoderSwerve(motor, 360);
       case "canandcoder_can":
-//      case "canandmag_can":
-//        return new CanAndMagSwerve(id);
+      case "canandmag_can":
+        return new CanAndMagSwerve(id);
       case "ctre_mag":
       case "rev_hex":
       case "throughbore":
@@ -154,29 +154,29 @@ public class DeviceJson
         return new ADXRS450Swerve();
       case "analog":
         return new AnalogGyroSwerve(id);
-//      case "canandgyro":
-//        return new CanandgyroSwerve(id);
-//      case "navx":
-//      case "navx_spi":
-//        return new NavXSwerve(NavXComType.kMXP_SPI);
-//      case "navx3":
-//        return new NavX3Swerve(id);
-//      case "navx_i2c":
-//        DriverStation.reportWarning(
-//            "WARNING: There exists an I2C lockup issue on the roboRIO that could occur, more information here: " +
-//            "\nhttps://docs.wpilib.org/en/stable/docs/yearly-overview/known-issues" +
-//            ".html#onboard-i2c-causing-system-lockups",
-//            false);
-//        i2cLockupWarning.set(true);
-//        return new NavXSwerve(NavXComType.kI2C);
-//      case "navx_usb":
-//        DriverStation.reportWarning("WARNING: There is issues when using USB camera's and the NavX like this!\n" +
-//                                    "https://pdocs.kauailabs.com/navx-mxp/guidance/selecting-an-interface/", false);
-//        serialCommsIssueWarning.set(true);
-//        return new NavXSwerve(NavXComType.kUSB1);
-//      case "navx_mxp_serial":
-//        serialCommsIssueWarning.set(true);
-//        return new NavXSwerve(NavXComType.kMXP_UART);
+      case "canandgyro":
+        return new CanandgyroSwerve(id);
+      case "navx":
+      case "navx_spi":
+        return new NavXSwerve(NavXComType.kMXP_SPI);
+      case "navx3":
+        return new NavX3Swerve(id);
+      case "navx_i2c":
+        DriverStation.reportWarning(
+            "WARNING: There exists an I2C lockup issue on the roboRIO that could occur, more information here: " +
+            "\nhttps://docs.wpilib.org/en/stable/docs/yearly-overview/known-issues" +
+            ".html#onboard-i2c-causing-system-lockups",
+            false);
+        i2cLockupWarning.set(true);
+        return new NavXSwerve(NavXComType.kI2C);
+      case "navx_usb":
+        DriverStation.reportWarning("WARNING: There is issues when using USB camera's and the NavX like this!\n" +
+                                    "https://pdocs.kauailabs.com/navx-mxp/guidance/selecting-an-interface/", false);
+        serialCommsIssueWarning.set(true);
+        return new NavXSwerve(NavXComType.kUSB1);
+      case "navx_mxp_serial":
+        serialCommsIssueWarning.set(true);
+        return new NavXSwerve(NavXComType.kMXP_UART);
       case "pigeon":
         return new PigeonSwerve(id);
       case "pigeon_via_talonsrx":
@@ -298,8 +298,8 @@ public class DeviceJson
                                                       new Class[]{int.class, boolean.class, DCMotor.class},
                                                       new Object[]{id, isDriveMotor, DCMotor.getNeoVortex(1)});
 
-//      case "nova_minion":
-//        return new ThriftyNovaSwerve(id, isDriveMotor, DCMotor.getMinion(1));
+      case "nova_minion":
+        return new ThriftyNovaSwerve(id, isDriveMotor, DCMotor.getMinion(1));
       case "nova_pulsar":
         throw new UnsupportedOperationException("Cannot create pulsar combination");
       default:
