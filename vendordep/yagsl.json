@@ -36,7 +36,7 @@
     },
     {
       "uuid": "ab676553-b602-441f-a38d-f1296eff6537",
-      "errorMessage": "Phoenix5 Replay is required!",
+      "errorMessage": "Phoenix5 Replay Compatibility is required!",
       "offlineFileName": "Phoenix5-replay-5.36.0-beta-1.json",
       "onlineUrl": "https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-replay-frc2026-beta-latest.json"
     },
