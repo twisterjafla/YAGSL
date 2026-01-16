@@ -48,7 +48,7 @@ public class ReefscapeBargeSimulation extends Goal {
                 false);
 
         StructPublisher<Pose3d> heldAlgaePublisher = NetworkTableInstance.getDefault()
-                .getStructTopic(isBlue ? "BlueBarge" : "RedBarge", Pose3d.struct)
+                .getStructTopic("/SmartDashboard/MapleSim/Goals/" + (isBlue ? "BlueBarge" : "RedBarge"), Pose3d.struct)
                 .publish();
         heldAlgaePublisher.set(new Pose3d(position, new Rotation3d()));
     }

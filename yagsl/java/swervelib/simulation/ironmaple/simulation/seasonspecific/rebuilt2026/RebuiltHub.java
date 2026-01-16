@@ -74,7 +74,7 @@ public class RebuiltHub extends Goal {
 
         this.arena = arena;
         StructPublisher<Pose3d> HubPosePublisher = NetworkTableInstance.getDefault()
-                .getStructTopic(isBlue ? "BlueHub" : "RedHub", Pose3d.struct)
+                .getStructTopic("/SmartDashboard/MapleSim/Goals/" + (isBlue ? "BlueHub" : "RedHub"), Pose3d.struct)
                 .publish();
         HubPosePublisher.set(new Pose3d(position, new Rotation3d()));
     }

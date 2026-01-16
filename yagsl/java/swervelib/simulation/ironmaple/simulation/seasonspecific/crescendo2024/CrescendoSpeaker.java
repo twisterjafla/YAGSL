@@ -48,7 +48,7 @@ public class CrescendoSpeaker extends Goal {
 
         crescendoArena = arena;
         StructPublisher<Pose3d> speakerPosePublisher = NetworkTableInstance.getDefault()
-                .getStructTopic(isBlue ? "BlueSpeaker" : "RedSpeaker", Pose3d.struct)
+                .getStructTopic("/SmartDashboard/MapleSim/Goals/" + (isBlue ? "BlueSpeaker" : "RedSpeaker"), Pose3d.struct)
                 .publish();
         speakerPosePublisher.set(new Pose3d(position, new Rotation3d()));
     }
