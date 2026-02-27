@@ -995,8 +995,15 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
    */
   public AngularVelocity calculateAngularVelocity(Angle target)
   {
+    double offsetRadians = 0;
+
+    if (translationHeadingOffsetEnabled.isPresent() && translationHeadingOffsetEnabled.get().getAsBoolean()&&translationHeadingOffset.isPresent())
+    {
+      offsetRadians = translationHeadingOffset.get().getRadians();
+    }
+    
     var omegaRadiansPerSecond = swerveController.headingCalculate(swerveDrive.getOdometryHeading().getRadians(),
-                                                                  target.in(Radians));
+                                                                  target.in(Radians) + offsetRadians);
     if (azimuthFeedforward.isPresent())
     {
       omegaRadiansPerSecond += azimuthFeedforward.get()
