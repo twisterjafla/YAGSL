@@ -154,6 +154,14 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
    */
   private       Optional<Rotation2d>             translationHeadingOffset            = Optional.empty();
   /**
+   * Heading offset to apply during aim based control.
+   */
+  private       Optional<Rotation2d>             aimHeadingOffset                    = Optional.empty();
+  /**
+   * Aim offset enable state.
+   */
+  private       Optional<BooleanSupplier>        aimHeadingOffsetEnabled             = Optional.empty();
+  /**
    * Aim current pose lookahead time.
    */
   private       Optional<Time>                   aimLookaheadTime                    = Optional.empty();
@@ -264,6 +272,8 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
     this.aimLookaheadTime = s.aimLookaheadTime;
     this.azimuthFeedforward = s.azimuthFeedforward;
     this.aimGoalAngle = s.aimGoalAngle;
+    this.aimHeadingOffset = s.aimHeadingOffset;
+    this.aimHeadingOffsetEnabled = s.aimHeadingOffsetEnabled;
   }
 
   /**
@@ -643,6 +653,42 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
   }
 
   /**
+   * Aim heading offset enabled boolean supplier.
+   *
+   * @param enabled Boolean supplier to enable aim heading offset.
+   * @return this.
+   */
+  public SwerveInputStream aimHeadingOffset(BooleanSupplier enabled)
+  {
+    this.aimHeadingOffsetEnabled = Optional.of(enabled);
+    return this;
+  }
+
+  /**
+   * Aim heading offset enabled
+   *
+   * @param enabled Boolean to enable aim heading offset.
+   * @return this.
+   */
+  public SwerveInputStream aimHeadingOffset(boolean enabled)
+  {
+    this.aimHeadingOffsetEnabled = enabled ? Optional.of(() -> enabled) : Optional.empty();
+    return this;
+  }
+
+  /**
+   * Set the aim heading offset.
+   *
+   * @param offset The offset applied to the aim heading target.
+   * @return this.
+   */
+  public SwerveInputStream aimHeadingOffset(Rotation2d offset)
+  {
+    this.aimHeadingOffset = Optional.of(offset);
+    return this;
+  }
+
+  /**
    * Enable locking of rotation and only translating, overrides everything.
    *
    * @param trigger Translation only while returns true.
@@ -995,15 +1041,8 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
    */
   public AngularVelocity calculateAngularVelocity(Angle target)
   {
-    double offsetRadians = 0;
-
-    if (translationHeadingOffsetEnabled.isPresent() && translationHeadingOffsetEnabled.get().getAsBoolean()&&translationHeadingOffset.isPresent())
-    {
-      offsetRadians = translationHeadingOffset.get().getRadians();
-    }
-    
     var omegaRadiansPerSecond = swerveController.headingCalculate(swerveDrive.getOdometryHeading().getRadians(),
-                                                                  target.in(Radians) + offsetRadians);
+                                                                  target.in(Radians));
     if (azimuthFeedforward.isPresent())
     {
       omegaRadiansPerSecond += azimuthFeedforward.get()
@@ -1086,8 +1125,13 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
         // TODO: Shoot on the move, using
         //  targetVector = targetVector.div(targetDistance).times(sotmDistanceToRPSMap.get(targetDistance)*flyWheelCircumference)
         //  var shotVector = targetVector.minus(new Translation2d(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
-        var        shotVector = targetVector;
-        Rotation2d target     = shotVector.getAngle();
+        var shotVector = targetVector;
+        Rotation2d target = shotVector.getAngle();
+        if (aimHeadingOffsetEnabled.isPresent() && aimHeadingOffsetEnabled.get().getAsBoolean() && aimHeadingOffset.isPresent())
+        {
+          target = target.plus(aimHeadingOffset.get());
+        } 
+
         aimGoalAngle = Optional.of(target.getMeasure());
         omegaRadiansPerSecond = calculateAngularVelocity(target.getMeasure()).in(RadiansPerSecond);
         speeds = new ChassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
